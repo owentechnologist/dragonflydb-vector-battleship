@@ -1,0 +1,9 @@
+demo.md
+connection_stuff.py
+cockroach-data
+dfenv/**
+.env
+__pycache__/
+.git
+.CLAUDE
+.DS_Store
