@@ -45,8 +45,10 @@ export BATTLESHIP_TABLE=vb.battle_v21
 
 - **Run the populate_quadrants.py program to write a bunch of battleships into the database:**
 
+- **If you do not specify the --host --port etc it defaults to localhost 6379**
+
 ```
-python3 populate_quadrants.py <number_of_ships_to_create> <number_of_quadrants>
+python3 populate_quadrants.py <number_of_ships_to_create> <number_of_quadrants> --host hostmenow.com --port 10000 --password supersecurepw --use-tls true --ssl-cert-reqs none 
 ```
 
 example with small dataset:
@@ -70,8 +72,10 @@ A single-file web interface using the Bottle framework provides visual feedback 
 
 To play with a web-UI: Start the web server from the project root directory:
 
+- **If you do not specify the --host --port etc it defaults to localhost 6379**
+
 ```
-python3 bottle_web_ui.py
+python3 bottle_web_ui.py --host hostmenow.com --port 10000 --password supersecurepw --use-tls true --ssl-cert-reqs none
 ```
 
 The server will start on http://localhost:8000
@@ -102,25 +106,16 @@ Win by achieving a 100% match within 20 attempts!
 
 - **Run a battle bot that repeatedly generates ship vectors and then tests for their overlap in the vector space (it gets 100 tries):**
 ```
-You need at least the first arg of the following ordered args: <percentage> <max_attempts> <sleep_time> <should_switch>
-Example: python3 battle_bot.py 85 200
-Example: python3 battle_bot.py 65 1000 0 False
+You need all of the following ordered args: 
+
+<percentage> <max_attempts> <sleep_time> <should_switch_quadrants>
+Example: python3 battle_bot.py 65 100 0 False
 ```
 
-```
-python3 battle_bot.py <percentage> <max_attempts> <sleep_time> <should_switch>
-```
-
-Example uses default of 200 millis sleep when ship detected:
+- **If you do not specify the host port etc it defaults to localhost 6379**
 
 ```
-python3 battle_bot.py 70
-```
-
-Example user-specified sleep time of 10 millis when ship detected:
-
-```
-python3 battle_bot.py 70 100 10
+python3 battle_bot.py <percentage> <max_attempts> <sleep_time> <should_switch> --host hostmenow.com --port 10000 --password supersecurepw --use-tls true --ssl-cert-reqs none
 ```
 
 ## NB: the battle_bot runs until it runs out of attempts or hits a ship with an exact match on type, location, and quadrant

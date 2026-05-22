@@ -1,6 +1,6 @@
 import os
 import struct
-import redis
+from connect_to_datastore import connect_to_datastore
 from redis.commands.search.field import TagField, NumericField, VectorField
 from redis.commands.search.index_definition import IndexDefinition, IndexType
 from redis.commands.search.query import Query
@@ -12,8 +12,10 @@ TABLE_CONFIGS = {
     'vb.battle_v11': {'prefix': 'ship:battle_v11:', 'index_name': 'idx:battle_v11', 'dim': 11},
 }
 
-_redis_client = None
 
+'''
+# now imported from connect_to_datastore.py
+_redis_client = None
 
 def get_redis():
     global _redis_client
@@ -26,16 +28,18 @@ def get_redis():
         )
         ensure_indices(_redis_client)
     return _redis_client
-
+'''
 
 def get_table_config(table_name):
     return TABLE_CONFIGS.get(table_name, TABLE_CONFIGS['vb.battleship'])
 
-
-def ensure_indices(r):
+# creates all 3 indexes (one for each possible vector dimension type)
+def ensure_indices():
+    connection=connect_to_datastore()
+    #print(f"Ensuring search indexes exist... in {connection}")
     for config in TABLE_CONFIGS.values():
         try:
-            r.ft(config['index_name']).create_index(
+            connection.ft(config['index_name']).create_index(
                 [
                     TagField('battleship_class'),
                     NumericField('quadrant'),
@@ -66,7 +70,7 @@ def _s(v):
 
 def vector_search(table_name, quadrant, vector, threshold):
     """Return ships in quadrant whose L2 similarity meets threshold, sorted best-first."""
-    r = get_redis()
+    connection = connect_to_datastore()
     config = get_table_config(table_name)
     vec_bytes = struct.pack(f'{len(vector)}f', *[float(v) for v in vector])
     q = (
@@ -76,7 +80,7 @@ def vector_search(table_name, quadrant, vector, threshold):
         .paging(0, 10)
         .dialect(2)
     )
-    results = r.ft(config['index_name']).search(q, query_params={'vec': vec_bytes})
+    results = connection.ft(config['index_name']).search(q, query_params={'vec': vec_bytes})
     matched = []
     for doc in results.docs:
         dist = float(_s(doc.dist))
@@ -93,13 +97,13 @@ def vector_search(table_name, quadrant, vector, threshold):
 
 
 def destroy_ship(table_name, ship_uuid):
-    r = get_redis()
+    connection = connect_to_datastore()
     config = get_table_config(table_name)
-    r.delete(f"{config['prefix']}{ship_uuid}")
+    connection.delete(f"{config['prefix']}{ship_uuid}")
 
 
 def get_max_quadrants(table_name):
-    r = get_redis()
+    connection = connect_to_datastore()
     config = get_table_config(table_name)
-    val = r.get(f"meta:{config['index_name']}:max_quadrant")
+    val = connection.get(f"meta:{config['index_name']}:max_quadrant")
     return int(val) if val else 4

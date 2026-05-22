@@ -2,7 +2,7 @@ import random
 import time,sys,os
 
 from vector_battleship_create import make_ship_shape_from_anchorXY
-from private_stuff import vector_search, destroy_ship, get_max_quadrants, close_pool
+from private_stuff import ensure_indices, vector_search, destroy_ship, get_max_quadrants, close_pool
 ''' 
 This class provides the behavior of an automated player who:
 1. picks a quadrant at random
@@ -206,6 +206,7 @@ class AutomatedPlayer:
 
 # --- Likely entry point for the python interpretor ---
 if __name__ == "__main__":
+    ensure_indices()
     if(len(sys.argv)==1):
         print("You need at least the first arg of the following ordered args: <percentage> <max_attempts> <sleep_time> <should_switch>")
         print("Example: python3 battle_bot.py 65 1000 0 False")
@@ -215,6 +216,7 @@ if __name__ == "__main__":
     should_switch_ship = False # an aggressive bot will greedily blow up any ship near its target location
     honing_sleep_time=200 #millis
     percentage_match_target = 65.00
+    
     if(len(sys.argv)>1):
         percentage_match_target = float(sys.argv[1])
     if(len(sys.argv)>2):

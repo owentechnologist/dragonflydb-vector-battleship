@@ -1,7 +1,7 @@
 import os, sys
 from vector_battleship_create import make_ship_shape_from_anchorXY
 from populate_quadrants import Populator
-from private_stuff import vector_search, destroy_ship, close_pool
+from private_stuff import ensure_indices,vector_search, destroy_ship, close_pool
 
 # invoke this program like this:
 # python human_player.py <match_percentage_threshold> <max_attempts>
@@ -138,6 +138,7 @@ class HumanPlayer:
 
 # --- Likely entry point for the python interpretor ---
 if __name__ == '__main__':
+    ensure_indices()
     player = HumanPlayer(float(sys.argv[1]), int(sys.argv[2]))
     player.explain_game_play()
     player.ask_place_another()

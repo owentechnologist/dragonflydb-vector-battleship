@@ -11,7 +11,8 @@ import os
 import uuid
 from uuid import UUID
 from datetime import datetime
-from private_stuff import get_redis, close_pool, vector_search, destroy_ship, get_max_quadrants, _s
+from private_stuff import vector_search, destroy_ship, get_max_quadrants, _s
+from connect_to_datastore import connect_to_datastore
 from vector_battleship_create import make_ship_shape_from_anchorXY
 
 # Initialize Bottle app
@@ -1235,9 +1236,9 @@ def execute_target_attempt_db(session_id, quadrant, ship_type, anchor_x, anchor_
 
 def create_session_db(player_name, match_threshold, max_attempts, battleship_table):
     """Create a new game session."""
-    r = get_redis()
+    connection = connect_to_datastore()
     session_id = str(uuid.uuid4())
-    r.hset(f"session:{session_id}", mapping={
+    connection.hset(f"session:{session_id}", mapping={
         'player_name': player_name or '',
         'battleship_table': battleship_table,
         'started_at': datetime.utcnow().isoformat(),
@@ -1248,14 +1249,14 @@ def create_session_db(player_name, match_threshold, max_attempts, battleship_tab
         'status': 'active',
         'best_match_so_far': '0.0',
     })
-    r.expire(f"session:{session_id}", 86400)
+    connection.expire(f"session:{session_id}", 86400)
     return session_id
 
 
 def get_session_info_db(session_id):
     """Get current session information."""
-    r = get_redis()
-    raw = r.hgetall(f"session:{session_id}")
+    connection = connect_to_datastore()
+    raw = connection.hgetall(f"session:{session_id}")
     if not raw:
         raise Exception(f"Session {session_id} not found")
     d = {_s(k): _s(v) for k, v in raw.items()}
@@ -1285,8 +1286,8 @@ def record_attempt_db(session_id, attempt_number, quadrant, ship_type, anchor_x,
     else:
         trend = 'same'
 
-    r = get_redis()
-    r.rpush(f"session:{session_id}:history", json.dumps({
+    connection = connect_to_datastore()
+    connection.rpush(f"session:{session_id}:history", json.dumps({
         'attempt_number': attempt_number,
         'quadrant': quadrant,
         'ship_type': ship_type,
@@ -1313,13 +1314,13 @@ def update_session_db(session_id, attempts_used=None, best_match=None, status=No
     if ended_at:
         updates['ended_at'] = datetime.utcnow().isoformat()
     if updates:
-        get_redis().hset(f"session:{session_id}", mapping=updates)
+        connect_to_datastore().hset(f"session:{session_id}", mapping=updates)
 
 
 def get_attempt_history_db(session_id):
     """Get all targeting attempts for a session."""
-    r = get_redis()
-    items = r.lrange(f"session:{session_id}:history", 0, -1)
+    connection = connect_to_datastore()
+    items = connection.lrange(f"session:{session_id}:history", 0, -1)
     return [json.loads(_s(item)) for item in items]
 
 

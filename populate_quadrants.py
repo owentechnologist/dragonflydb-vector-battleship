@@ -4,7 +4,8 @@ import os
 import struct
 import uuid
 from vector_battleship_create import make_ship_shape_from_anchorXY
-from private_stuff import get_redis, get_table_config, close_pool
+from private_stuff import get_table_config, close_pool
+from connect_to_datastore import connect_to_datastore
 
 
 class Populator:
@@ -16,14 +17,14 @@ class Populator:
 
     def insert_vectorized_object(self, ship_type, quadrant, anchor_x, anchor_y):
         print(f"\nAttempting to place a '{ship_type}' in quadrant {quadrant} at anchor ({anchor_x}, {anchor_y})")
-        r = get_redis()
+        connection = connect_to_datastore()
         config = get_table_config(self.battleship_table)
 
         vector = make_ship_shape_from_anchorXY(anchor_x, anchor_y, ship_type)
         vec_bytes = struct.pack(f'{len(vector)}f', *[float(v) for v in vector])
         ship_id = str(uuid.uuid4())
 
-        r.hset(f"{config['prefix']}{ship_id}", mapping={
+        connection.hset(f"{config['prefix']}{ship_id}", mapping={
             'battleship_class': ship_type,
             'quadrant': quadrant,
             'anchorpoint': anchor_x + ((anchor_y * 10) - 10),
@@ -31,9 +32,9 @@ class Populator:
         })
 
         meta_key = f"meta:{config['index_name']}:max_quadrant"
-        current_max = r.get(meta_key)
+        current_max = connection.get(meta_key)
         if not current_max or quadrant > int(current_max):
-            r.set(meta_key, quadrant)
+            connection.set(meta_key, quadrant)
 
     def run(self):
         print(f'^^^^ POPULATING {self.battleship_table} WITH {self.number_of_objects} OBJECTS ACROSS {self.num_of_quadrants} QUADRANTS ^^^^^')
